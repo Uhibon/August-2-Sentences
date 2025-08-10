@@ -1,91 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Slideshow</title>
-  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Disaster Sentences Slideshow (33 cards)</title>
   <style>
+    :root {
+      --bg: #0b0b10;
+      --fg: #f5f7fb;
+      --muted: #9aa3b2;
+      --accent: #7cc4ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: sans-serif;
-      background: #f2f2f2;
+      background: radial-gradient(1200px 800px at 70% -10%, #111626 0%, var(--bg) 60%);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100dvh;
+      max-width: 960px;
+      margin: 0 auto;
+      gap: 8px;
+      padding: 16px clamp(12px, 3vw, 24px);
+    }
+
+    header {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      height: 100vh;
+      gap: 12px;
     }
-    .swiper {
-      width: 95%;
-      max-width: 900px;
-      height: 90vh;
+    header h1 { font-size: clamp(1rem, 1.6vw + 0.6rem, 1.25rem); margin: 0; font-weight: 650; letter-spacing: .2px; }
+
+    .slider {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      background: #0f1220;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: pan-y; /* allow vertical scroll */
     }
-    .swiper-slide img {
+
+    .track {
+      display: flex;
+      height: 100%;
       width: 100%;
+      transform: translateX(var(--tx, 0));
+      transition: transform 280ms ease;
+      will-change: transform;
+    }
+
+    .slide {
+      flex: 0 0 100%;
+      display: grid;
+      place-items: center;
+      height: calc(100dvh - 160px); /* responsive stage height */
+      padding: clamp(8px, 2vw, 16px);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    }
+
+    .slide figure { 
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    .slide img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
       height: auto;
       object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.35);
+      background: #0b0e1a;
+    }
+
+    .controls {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      pointer-events: none;
+    }
+
+    .btn {
+      pointer-events: auto;
+      align-self: center;
+      justify-self: stretch;
+      display: grid;
+      place-items: center;
+      padding: 0 6px;
+      height: 100%;
+      color: var(--fg);
+      text-decoration: none;
+      opacity: .0;
+      transition: opacity .2s ease;
+    }
+    .slider:hover .btn { opacity: .9; }
+    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .btn span {
+      display: inline-grid; place-items: center;
+      width: 42px; height: 42px;
+      border-radius: 999px;
+      background: rgba(20,24,40,.7);
+      box-shadow: 0 8px 20px rgba(0,0,0,.35);
+      font-size: 22px;
+      line-height: 1;
+      backdrop-filter: blur(4px);
+    }
+
+    .btn.prev { justify-self: start; }
+    .btn.next { justify-self: end; }
+
+    .hud {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .counter { font-variant-numeric: tabular-nums; color: var(--fg); }
+
+    .progress {
+      position: relative;
+      height: 6px;
+      flex: 1 1 auto;
+      background: rgba(255,255,255,.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--pct, 0%);
+      background: linear-gradient(90deg, #7cc4ff, #a0e0ff);
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .hint { opacity: .7; }
+    .hint kbd { background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+
+    @media (max-width: 640px) {
+      .slide { height: calc(100dvh - 190px); }
     }
   </style>
 </head>
 <body>
+  <div class="app" id="app">
+    <header>
+      <h1>Disaster Sentences – 33 Cards</h1>
+      <div class="hud">
+        <span class="counter" id="counter">1 / 33</span>
+        <div class="progress" aria-hidden="true"><div class="bar" id="bar" style="--pct: 3.03%"></div></div>
+      </div>
+    </header>
 
-  <div class="swiper">
-    <div class="swiper-wrapper">
-      <div class="swiper-slide"><img src="01.jpg" alt="01"></div>
-      <div class="swiper-slide"><img src="02.jpg" alt="02"></div>
-      <div class="swiper-slide"><img src="03.jpg" alt="03"></div>
-      <div class="swiper-slide"><img src="04.jpg" alt="04"></div>
-      <div class="swiper-slide"><img src="05.jpg" alt="05"></div>
-      <div class="swiper-slide"><img src="06.jpg" alt="06"></div>
-      <div class="swiper-slide"><img src="07.jpg" alt="07"></div>
-      <div class="swiper-slide"><img src="08.jpg" alt="08"></div>
-      <div class="swiper-slide"><img src="09.jpg" alt="09"></div>
-      <div class="swiper-slide"><img src="10.jpg" alt="10"></div>
-      <div class="swiper-slide"><img src="11.jpg" alt="11"></div>
-      <div class="swiper-slide"><img src="12.jpg" alt="12"></div>
-      <div class="swiper-slide"><img src="13.jpg" alt="13"></div>
-      <div class="swiper-slide"><img src="14.jpg" alt="14"></div>
-      <div class="swiper-slide"><img src="15.jpg" alt="15"></div>
-      <div class="swiper-slide"><img src="16.jpg" alt="16"></div>
-      <div class="swiper-slide"><img src="17.jpg" alt="17"></div>
-      <div class="swiper-slide"><img src="18.jpg" alt="18"></div>
-      <div class="swiper-slide"><img src="19.jpg" alt="19"></div>
-      <div class="swiper-slide"><img src="20.jpg" alt="20"></div>
-      <div class="swiper-slide"><img src="21.jpg" alt="21"></div>
-      <div class="swiper-slide"><img src="22.jpg" alt="22"></div>
-      <div class="swiper-slide"><img src="23.jpg" alt="23"></div>
-      <div class="swiper-slide"><img src="24.jpg" alt="24"></div>
-      <div class="swiper-slide"><img src="25.jpg" alt="25"></div>
-      <div class="swiper-slide"><img src="26.jpg" alt="26"></div>
-      <div class="swiper-slide"><img src="27.jpg" alt="27"></div>
-      <div class="swiper-slide"><img src="28.jpg" alt="28"></div>
-      <div class="swiper-slide"><img src="29.jpg" alt="29"></div>
-      <div class="swiper-slide"><img src="30.jpg" alt="30"></div>
-      <div class="swiper-slide"><img src="31.jpg" alt="31"></div>
-      <div class="swiper-slide"><img src="32.jpg" alt="32"></div>
-      <div class="swiper-slide"><img src="33.jpg" alt="33"></div>
+    <div class="slider" id="slider" aria-roledescription="carousel" aria-label="Disaster Sentences Slideshow">
+      <div class="track" id="track" style="--tx: 0px"></div>
+      <div class="controls" aria-hidden="true">
+        <button class="btn prev" id="prevBtn" aria-label="Previous (←)"><span>←</span></button>
+        <button class="btn next" id="nextBtn" aria-label="Next (→)"><span>→</span></button>
+      </div>
     </div>
 
-    <div class="swiper-button-next"></div>
-    <div class="swiper-button-prev"></div>
-    <div class="swiper-pagination"></div>
+    <div class="footer">
+      <div class="hint">Tip: Swipe, drag, or use <kbd>←</kbd>/<kbd>→</kbd>. Double‑tap to fullscreen.</div>
+      <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+        <input type="checkbox" id="loopToggle" /> Loop
+      </label>
+    </div>
   </div>
 
-  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
   <script>
-    const swiper = new Swiper('.swiper', {
-      loop: false,
-      navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev',
-      },
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-      grabCursor: true,
-    });
-  </script>
+    // -------- Config --------
+    const TOTAL = 33;
+    const IMG_PATH = (i) => `${String(i).padStart(2,'0')}.jpg`;
+    const START_INDEX = 0; // 0-based
 
+    // -------- DOM --------
+    const track = document.getElementById('track');
+    const counter = document.getElementById('counter');
+    const bar = document.getElementById('bar');
+    const slider = document.getElementById('slider');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const loopToggle = document.getElementById('loopToggle');
+
+    // -------- Build slides --------
+    const slides = [];
+    for (let i = 1; i <= TOTAL; i++) {
+      const slide = document.createElement('section');
+      slide.className = 'slide';
+      slide.setAttribute('role', 'group');
+      slide.setAttribute('aria-roledescription', 'slide');
+      slide.setAttribute('aria-label', `${i} of ${TOTAL}`);
+
+      const figure = document.createElement('figure');
+      const img = document.createElement('img');
+      img.alt = `Card ${i}`;
+      // Lazy: only set src when needed; use data-src for later
+      img.loading = 'lazy';
+      img.dataset.src = IMG_PATH(i);
+
+      figure.appendChild(img);
+      slide.appendChild(figure);
+      track.appendChild(slide);
+      slides.push(slide);
+    }
+
+    let index = START_INDEX;
+    let w = slider.clientWidth;
+    let tx = -index * w;
+    let dragging = false;
+    let startX = 0;
+    let currentX = 0;
+    const DRAG_THRESHOLD = 48; // px to trigger a slide change
+
+    function update() {
+      w = slider.clientWidth;
+      tx = -index * w;
+      track.style.transition = 'transform 280ms ease';
+      track.style.setProperty('--tx', `${tx}px`);
+
+      counter.textContent = `${index+1} / ${TOTAL}`;
+      const pct = ((index+1) / TOTAL) * 100;
+      bar.style.setProperty('--pct', `${pct}%`);
+
+      // Preload current, prev, next
+      [index-1, index, index+1].forEach(i => {
+        if (i >= 0 && i < TOTAL) {
+          const img = slides[i].querySelector('img');
+          if (!img.src) img.src = img.dataset.src;
+        }
+      });
+
+      // Manage button states if not looping
+      const loop = loopToggle.checked;
+      prevBtn.disabled = !loop && index === 0;
+      nextBtn.disabled = !loop && index === TOTAL-1;
+    }
+
+    function go(n) {
+      const loop = loopToggle.checked;
+      if (loop) {
+        index = (n + TOTAL) % TOTAL;
+      } else {
+        index = Math.max(0, Math.min(TOTAL-1, n));
+      }
+      update();
+    }
+
+    function next() { go(index + 1); }
+    function prev() { go(index - 1); }
+
+    // Resize handler
+    let resizeTO;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTO);
+      resizeTO = setTimeout(() => {
+        // Keep slide aligned on resize
+        track.style.transition = 'none';
+        w = slider.clientWidth;
+        tx = -index * w;
+        track.style.setProperty('--tx', `${tx}px`);
+      }, 100);
+    });
+
+    // Buttons
+    nextBtn.addEventListener('click', next);
+    prevBtn.addEventListener('click', prev);
+
+    // Keyboard
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+      if (e.key.toLowerCase() === 'f') toggleFullscreen();
+    });
+
+    // Pointer/Touch drag
+    function onPointerDown(clientX) {
+      dragging = true;
+      startX = clientX;
+      currentX = clientX;
+      track.style.transition = 'none';
+    }
+    function onPointerMove(clientX) {
+      if (!dragging) return;
+      currentX = clientX;
+      const dx = currentX - startX;
+      track.style.setProperty('--tx', `${tx + dx}px`);
+    }
+    function onPointerUp() {
+      if (!dragging) return;
+      dragging = false;
+      const dx = currentX - startX;
+      if (Math.abs(dx) > DRAG_THRESHOLD) {
+        if (dx < 0) next(); else prev();
+      } else {
+        // snap back
+        track.style.transition = 'transform 220ms ease';
+        track.style.setProperty('--tx', `${tx}px`);
+      }
+    }
+
+    // Mouse
+    slider.addEventListener('mousedown', (e) => onPointerDown(e.clientX));
+    window.addEventListener('mousemove', (e) => onPointerMove(e.clientX));
+    window.addEventListener('mouseup', onPointerUp);
+
+    // Touch
+    slider.addEventListener('touchstart', (e) => onPointerDown(e.touches[0].clientX), {passive:true});
+    slider.addEventListener('touchmove', (e) => onPointerMove(e.touches[0].clientX), {passive:true});
+    slider.addEventListener('touchend', onPointerUp);
+
+    // Double‑tap / double‑click = fullscreen
+    slider.addEventListener('dblclick', toggleFullscreen);
+    slider.addEventListener('touchend', (e) => {
+      if (e.detail === 2) toggleFullscreen();
+    });
+
+    function toggleFullscreen() {
+      const el = document.documentElement;
+      if (!document.fullscreenElement) {
+        el.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+
+    // Initialize
+    update();
+
+    // Optional: expose for console
+    window.slideshow = { next, prev, go, get index(){return index;} };
+  </script>
 </body>
 </html>
